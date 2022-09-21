@@ -11,7 +11,8 @@ import xml.etree.ElementTree as ET
 from assets import *
 from igeditor import IGEditor
 
-DOC = '''1. Export Image Layers:
+DOC = '''IGKit v0.0.2
+1. Export Image Layers:
     Export Images which can be identified by Import Folder to Layers in PS.
     Use the folder exported by 'Save project with individual images' in IGEditor as its src.
 2. Import Image Objects:
@@ -61,19 +62,6 @@ class App:
         if folder:
             self.btn2LayerAction(folder)
     def btn2LayerAction(self, folder):
-        def getStates(buttonID:int, interactive:Interactive):
-            states = []
-            for page in interactive.pages:
-                for bog in page.bogs:
-                    for button in bog.buttons:
-                        if button.n == buttonID:
-                            states.append([interactive.caption, page.caption, bog.caption, button.caption, 'N.png'])
-                        elif button.s == buttonID:
-                            states.append([interactive.caption, page.caption, bog.caption, button.caption, 'S.png'])
-                        elif button.a == buttonID:
-                            states.append([interactive.caption, page.caption, bog.caption, button.caption, 'A.png'])
-            return states
-
         projectPath = os.path.join(folder, 'project.xml')
         assert(os.path.exists(projectPath))
         tree = ET.parse(projectPath)
@@ -94,7 +82,7 @@ class App:
                         buttonID = button.getObjectID(state[0])
                         if buttonID == 65535:
                             continue
-                        states = getStates(buttonID, interactive)
+                        states = self.getStates(buttonID, interactive)
 
                         for s in states:
                             imagePath = os.path.join(folder, '_'.join(s))
@@ -299,15 +287,17 @@ class App:
         messagebox.showinfo(message='Success!')
 
     def homogenicHidden(self):
-        dliesPath = filedialog.askopenfilename(title='Open IGEditor Dlies Project File',
-                                               filetypes=[('IGEditor Dlies File', '*.dlies')])
+        folder = filedialog.askdirectory(title='Open folder with individual images', mustexist=True)
         page = simpledialog.askinteger('', prompt='Please Enter Page ID: ')
         interval = simpledialog.askinteger('', prompt='Please Enter Space Interval (Default is 50px): ', initialvalue=50)
-        if dliesPath and page != None and interval != None:
+        if folder and page != None and interval != None:
+            dliesPath = os.path.join(folder, 'project.xml')
+            assert(os.path.exists(dliesPath))
             self.homogenicHiddenAction(dliesPath, int(page), int(interval))
     def homogenicHiddenAction(self, dliesPath:str, pageID:int, interval:int=50):
-        lattice = [(x, y) for y in range(0, 1080, interval) for x in range(0, 1920, interval)]
+        lattice = [(x, y) for y in range(0, 1050, interval) for x in range(0, 1900, interval)]
         ind = 0
+        folder = os.path.dirname(dliesPath)
         dliesTree = ET.parse(dliesPath)
         dliesRoot = dliesTree.getroot()
         dliesInteractive = Interactive(dliesRoot.find('DisplaySets/IesDisplaySet/Interactive'))
@@ -319,11 +309,51 @@ class App:
                         if button.isHidden:
                             button.x, button.y = lattice[ind]
                             ind += 1
+                        else: # the object is transparent.
+                            for state in ['N', 'S', 'A']:
+                                transparent = False
+                                states = []
+                                buttonID = button.getObjectID(state)
+                                if buttonID == 65535:
+                                    continue
+                                states = self.getStates(buttonID, dliesInteractive)
+
+                                for s in states:
+                                    imagePath = os.path.join(folder, '_'.join(s))
+                                    if os.path.exists(imagePath):
+                                        image = Image.open(imagePath)
+                                        alpha = image.getchannel('A')
+                                        colors = alpha.getcolors() # [(count, color)]
+                                        if len(colors) == 1 and colors[0][1] == 0:
+                                            transparent = True
+                                        break
+                                if transparent:
+                                    continue
+                                break
+                            else:
+                                button.x, button.y = lattice[ind]
+                                button.n = 65535
+                                button.s = 65535
+                                button.a = 65535
+                                ind += 1
         
         dliesPath = '.'.join(dliesPath.split('.')[:-1]) + '_new.dlies'
         dliesTree.write(dliesPath, encoding='UTF-8', xml_declaration=True)
         self.normalizeDlies(dliesPath)
         messagebox.showinfo(message='Success!')
+
+    def getStates(self, buttonID:int, interactive:Interactive):
+        states = []
+        for page in interactive.pages:
+            for bog in page.bogs:
+                for button in bog.buttons:
+                    if button.n == buttonID:
+                        states.append([interactive.caption, page.caption, bog.caption, button.caption, 'N.png'])
+                    elif button.s == buttonID:
+                        states.append([interactive.caption, page.caption, bog.caption, button.caption, 'S.png'])
+                    elif button.a == buttonID:
+                        states.append([interactive.caption, page.caption, bog.caption, button.caption, 'A.png'])
+        return states
 
     def normalizeDlies(self, fp:str):
         with open(fp, 'r', encoding='UTF-8', buffering=8192) as f:
