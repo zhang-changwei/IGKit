@@ -28,7 +28,7 @@ DOC = '''IGKit v0.0.2
 5. Guide Lines:
     Connect the guiding lines.
     Annotated in BOG caption.
-    Format: #row,column[,rowspan[,columspan[,start|end_flag]]]
+    Format: #row,column[,rowspan[,columspan[,start|end_flag]]][#comment]
     The # sign enables the feature.
     start|end_flag: choose in S, E, or just omit it.
 '''
@@ -113,7 +113,7 @@ class App:
         for obj in objects:
             igEditor.addObject()
             igEditor.importObject(obj)
-        sleep(2)
+        sleep(3)
         with open('objects.json', 'w', encoding='UTF-8') as f:
             json.dump(objects, f, indent=4)
 
@@ -199,8 +199,8 @@ class App:
             self.guideLinesAction(dliesPath)
     def guideLinesAction(self, dliesPath):
         def parseGrid(rule:str):
-            '''#row,column[,rowspan[,columspan[,start|end_flag]]]'''
-            rules = rule[1:].split(',')
+            '''#row,column[,rowspan[,columspan[,start|end_flag]]][#comment]'''
+            rules = rule.split('#')[1].split(',')
             flag = len(rules) >= 5 and rules[4].upper()[0] or 'A'
             colspan = len(rules) >= 4 and int(rules[3]) or 1
             rowspan = len(rules) >= 3 and int(rules[2]) or 1
@@ -308,6 +308,7 @@ class App:
                     for button in bog.buttons:
                         if button.isHidden:
                             button.x, button.y = lattice[ind]
+                            bog.caption = '!{:d},{:d}'.format(lattice[ind][0]/interval, lattice[ind][1]/interval)
                             ind += 1
                         else: # the object is transparent.
                             for state in ['N', 'S', 'A']:
@@ -332,6 +333,7 @@ class App:
                                 break
                             else:
                                 button.x, button.y = lattice[ind]
+                                bog.caption = '!{:d},{:d}'.format(lattice[ind][0]/interval, lattice[ind][1]/interval)
                                 button.n = 65535
                                 button.s = 65535
                                 button.a = 65535
