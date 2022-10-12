@@ -333,7 +333,7 @@ class App:
                                 break
                             else:
                                 button.x, button.y = lattice[ind]
-                                bog.caption = '!{:d},{:d}'.format(lattice[ind][0]/interval, lattice[ind][1]/interval)
+                                bog.caption = '!{:d},{:d}'.format(int(lattice[ind][0]/interval), int(lattice[ind][1]/interval))
                                 button.n = 65535
                                 button.s = 65535
                                 button.a = 65535

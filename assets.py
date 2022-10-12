@@ -1,3 +1,8 @@
+# import base64
+# import struct
+# from time import sleep
+# from PIL import Image
+# import numpy as np
 from typing import Optional
 import xml.etree.ElementTree as ET
 
@@ -160,3 +165,44 @@ class Button:
     @property
     def isHidden(self):
         return self.n == 65535 and self.s == 65535 and self.a == 65535
+
+# class Object:
+
+#     def __init__(self, node:ET.Element):
+#         self.node = node
+#         self.id = node.attrib['id']
+
+#     def getObject(self):
+#         buffer = []
+#         bufferA = []
+#         obj = self.node.text
+#         bytes_ = base64.b64decode(obj) + b'\0'
+#         with open('test2.bin', 'wb') as _:
+#             _.write(bytes_)
+#         width, height = struct.unpack('>HH', bytes_[3:7])
+#         print(width, height)
+#         for i in range(7, len(bytes_), 6):
+#             b = bytes_[i:i+6]
+#             repeat = struct.unpack('>H', b[1:3])[0]
+#             print(repeat >> 12, repeat & 0xFFF)
+#             repeat = repeat & 0xFFF
+#             sleep(0.5)
+
+#             Y = struct.unpack('B', b[0:1])[0]
+#             Cb, Cr, A = struct.unpack('BBB', b[3:])
+#             buffer +=  [Y, Cb, Cr] * repeat
+#             bufferA += [A] * repeat
+#         arr = np.array(buffer, dtype=np.uint8).reshape((width, height, 3))
+#         arrA = np.array(bufferA, dtype=np.uint8).reshape((width, height))
+#         im = Image.fromarray(arr, mode='YCbCr').convert('RGB')
+#         a = Image.fromarray(arrA, mode='L')
+#         im.putalpha(a)
+#         im.show()
+
+# if __name__ == '__main__':
+#     dliesTree = ET.parse('project_new.dlies')
+#     dliesRoot = dliesTree.getroot()
+#     x = Object(dliesRoot.find('DisplaySets/IesDisplaySet/Objects')[-1])
+#     x.getObject()
+#     # im = Image.new('RGBA', size=(100, 100), color=(16,32,64,128))
+#     # im.save('my.png')
